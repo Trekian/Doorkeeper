@@ -16,13 +16,9 @@ public class Commands extends ListenerAdapter {
     public void onGuildMessageReceived(GuildMessageReceivedEvent event){
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
-        System.out.println("Ich bin hier");
-
         if(args[0].equalsIgnoreCase(Main.prefix+"show_members")){
-            System.out.println("Ich bin hier2");
             show_active_members(event);
         }
-        System.out.println("Ich bin hier3");
     }
 
 
