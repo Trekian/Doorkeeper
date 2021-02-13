@@ -1,4 +1,4 @@
-package com.iconic.doorkeeper;
+package com.iconic.doorkeeper.model;
 
 /*
 This class is a kind of Database, to store data and to make a better overview and accessibility

@@ -1,6 +1,6 @@
 package com.iconic.doorkeeper;
 
-import net.dv8tion.jda.api.AccountType;
+import com.iconic.doorkeeper.eventlistener.OnMessageReceived;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -16,7 +16,7 @@ public class Main {
         jda = JDABuilder.createDefault("ODA5ODIzNDc0NDkwOTMzMjk4.YCas4g.5i7m9a6b1H-I4T7ZEU1eA-RL9wk").build();
         jda.getPresence().setActivity(Activity.watching("dir über die Schultern"));
 
-        jda.addEventListener(new Commands());
+        jda.addEventListener(new OnMessageReceived());
     }
 
 }
