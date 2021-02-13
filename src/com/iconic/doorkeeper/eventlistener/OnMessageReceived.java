@@ -2,12 +2,16 @@ package com.iconic.doorkeeper.eventlistener;
 
 import com.iconic.doorkeeper.Main;
 import com.iconic.doorkeeper.model.Model;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.GuildManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class OnMessageReceived extends ListenerAdapter {
@@ -42,6 +46,10 @@ public class OnMessageReceived extends ListenerAdapter {
             model.increase_Just_test();
             event.getChannel().sendMessage("just_test was " + (model.getJust_test() - 1) + " and is now" + model.getJust_test())
                     .queue();
+        } else if (args[0].equalsIgnoreCase(Main.prefix + "move_member")){
+
+            move_members(event,args[1],args[2]);
+
         }
     }
 
@@ -80,6 +88,7 @@ public class OnMessageReceived extends ListenerAdapter {
 
     private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams){
         List<Member> members = get_active_members(event);
+        Collections.shuffle(members);
         int amount_members = members.size();
 
         if(amount_members < amount_teams){
@@ -93,19 +102,53 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
+    private void move_members(GuildMessageReceivedEvent event, String member_name, String channel_name){
+
+        List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
+        System.out.println("Name des VoiceChannels 0: " + voice_list.get(0).getName());
+        System.out.println(get_active_members(event).toString());
+
+        Member its_me = null;
+        VoiceChannel its_paragon = null;
+
+        for (Member member: get_active_members(event)) {
+            System.out.println("Ergebniss vom Moven  "+ member.getUser().getName());
+            if (member.getUser().getName().equalsIgnoreCase("Trekian")){
+                System.out.println("I GOT YOU!");
+                its_me=member;
+                break;
+            }
+
+        }
+
+        for (VoiceChannel voice: voice_list) {
+            if(voice.getName().equalsIgnoreCase("Paragon")){
+                System.out.println("I GOT Paragon!");
+                its_paragon=voice;
+                break;
+            }
+        }
+
+
+        event.getGuild().moveVoiceMember(its_me,its_paragon).queue();
+
+
+    }
+
 
 
     // Get all users who are CURRENTLY in a VoiceChannel.
     private List<Member> get_active_members(GuildMessageReceivedEvent event) {
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
-        List<Member> members_list = new ArrayList<Member>();
+        List<Member> members_list = new ArrayList<>();
 
         System.out.println("Amount Voicechannels: " + voice_list.size());
 
         for (VoiceChannel channel : voice_list) {
             System.out.println("Name von Voicechannels: " + channel.getName());
             int channel_size = channel.getMembers().size();
+
             for (int i = 0; i < channel_size; i++) {
                 members_list.addAll(channel.getMembers());
             }
