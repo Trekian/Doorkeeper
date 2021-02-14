@@ -15,6 +15,7 @@ public class Model {
     private int current_active_member;
     private int amount_of_teams;
     private List<Team> team_list;
+    private List<Member> moderators;
 
     public Model(){
         team_list = new ArrayList<Team>();
