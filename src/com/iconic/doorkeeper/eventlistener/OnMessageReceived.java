@@ -10,9 +10,11 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.GuildManager;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.net.URL;
+import java.util.*;
 
 public class OnMessageReceived extends ListenerAdapter {
 
@@ -34,21 +36,20 @@ public class OnMessageReceived extends ListenerAdapter {
 
             try {
                 int amount_of_teams = Integer.parseInt(args[1]);
-                create_random_teams(event,amount_of_teams);
+                create_random_teams(event, amount_of_teams);
 
             } catch (Exception e) {
-                event.getChannel().sendMessage("No valid number entered. Use '!create_teams ?' for more information")
+                event.getChannel().sendMessage("No valid number entered.")
                         .queue();
             }
 
 
         } else if (args[0].equalsIgnoreCase(Main.prefix + "increase")) {
-            model.increase_Just_test();
-            event.getChannel().sendMessage("just_test was " + (model.getJust_test() - 1) + " and is now" + model.getJust_test())
-                    .queue();
-        } else if (args[0].equalsIgnoreCase(Main.prefix + "move_member")){
 
-            move_members(event,args[1],args[2]);
+
+        } else if (args[0].equalsIgnoreCase(Main.prefix + "move_member")) {
+
+            move_members(event, args[1], args[2]);
 
         }
     }
@@ -86,23 +87,49 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
-    private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams){
+    private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams) {
         List<Member> members = get_active_members(event);
         Collections.shuffle(members);
         int amount_members = members.size();
 
-        if(amount_members < amount_teams){
-            event.getChannel().sendMessage("Only "+amount_members+ " Teams are created, because there are less people than teams ordered")
+        if (amount_members < amount_teams) {
+            event.getChannel().sendMessage("Only " + amount_members + " Teams are created, because there are less people than teams ordered")
                     .queue();
             amount_teams = amount_members;
         }
+        //Minimun amount of members for each team
+        int amount_of_each_team = amount_teams / amount_members;
+        //Remaining members, because "amount_team % amount_members" could be !=0.
+        int remaining_members = amount_members - ( amount_teams * amount_of_each_team);
+        // The pointer of the List of Members
+        int index=0;
 
+        // Creating the amount of teams and add active members to each team.
+        for (int i = 1; i <= amount_teams; i++){
 
+            List<Member> new_created_team = new ArrayList<>();
+            int remaining = 0;
+
+            if(remaining_members > 0){
+                remaining =1;
+                remaining_members--;
+            }
+            for(int j = 0; j < (amount_of_each_team + remaining); j++){
+                new_created_team.add(members.get(index));
+                index++;
+            }
+            model.create_team(get_random_noun(), i ,new_created_team);
+
+        }
+
+        event.getChannel().sendMessage(model.show_teams())
+                .queue();
 
 
     }
 
-    private void move_members(GuildMessageReceivedEvent event, String member_name, String channel_name){
+    //TODO: Not Finished yet
+    private void move_members(GuildMessageReceivedEvent event, String member_name, String channel_name) {
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
         System.out.println("Name des VoiceChannels 0: " + voice_list.get(0).getName());
@@ -111,30 +138,29 @@ public class OnMessageReceived extends ListenerAdapter {
         Member its_me = null;
         VoiceChannel its_paragon = null;
 
-        for (Member member: get_active_members(event)) {
-            System.out.println("Ergebniss vom Moven  "+ member.getUser().getName());
-            if (member.getUser().getName().equalsIgnoreCase("Trekian")){
+        for (Member member : get_active_members(event)) {
+            System.out.println("Ergebniss vom Moven  " + member.getUser().getName());
+            if (member.getUser().getName().equalsIgnoreCase("Trekian")) {
                 System.out.println("I GOT YOU!");
-                its_me=member;
+                its_me = member;
                 break;
             }
 
         }
 
-        for (VoiceChannel voice: voice_list) {
-            if(voice.getName().equalsIgnoreCase("Paragon")){
+        for (VoiceChannel voice : voice_list) {
+            if (voice.getName().equalsIgnoreCase("Paragon")) {
                 System.out.println("I GOT Paragon!");
-                its_paragon=voice;
+                its_paragon = voice;
                 break;
             }
         }
 
 
-        event.getGuild().moveVoiceMember(its_me,its_paragon).queue();
+        event.getGuild().moveVoiceMember(its_me, its_paragon).queue();
 
 
     }
-
 
 
     // Get all users who are CURRENTLY in a VoiceChannel.
@@ -156,5 +182,30 @@ public class OnMessageReceived extends ListenerAdapter {
 
         return members_list;
 
+    }
+
+    private String get_random_noun() {
+        try {
+            String random_noun ="";
+            URL path = OnMessageReceived.class.getResource("nouns.txt");
+            File file = new File(path.getFile());
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            Random random = new Random();
+            //6801 nouns are in the list, the 6802 is EXCLUDED!
+            int random_line = random.nextInt(6802);
+            for (int i = 0; i <= random_line; i++) {
+                random_noun = br.readLine();
+                if(i == random_line){
+                    return random_noun;
+                }
+
+            }
+
+        } catch (Exception e) {
+            System.out.println("The nouns.txt could not read properly");
+            System.out.println(Arrays.toString(e.getStackTrace()));
+            return null;
+        }
+        return null;
     }
 }
