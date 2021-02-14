@@ -2,13 +2,11 @@ package com.iconic.doorkeeper.eventlistener;
 
 import com.iconic.doorkeeper.Main;
 import com.iconic.doorkeeper.model.Model;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.GuildChannel;
+
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.managers.GuildManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,19 +31,26 @@ public class OnMessageReceived extends ListenerAdapter {
 
         } else if (args[0].equalsIgnoreCase(Main.prefix + "create_random_teams")) {
 
+            if (get_active_members(event).size() == 0){
+                event.getChannel().sendMessage("Only people who are in voicechannels will be eligible.")
+                        .queue();
+                return;
+            }
 
             try {
                 int amount_of_teams = Integer.parseInt(args[1]);
                 create_random_teams(event, amount_of_teams);
 
-            } catch (Exception e) {
-                event.getChannel().sendMessage("No valid number entered.")
+            } catch (NumberFormatException e) {
+                event.getChannel().sendMessage("No valid number entered. Please choose a number for the amount of teams you want to create.")
                         .queue();
+            } catch (Exception e){
+                System.out.println(Arrays.toString(e.getStackTrace()));
             }
 
 
-        } else if (args[0].equalsIgnoreCase(Main.prefix + "increase")) {
-
+        } else if (args[0].equalsIgnoreCase(Main.prefix + "clear_teams")) {
+            clear_teams(event);
 
         } else if (args[0].equalsIgnoreCase(Main.prefix + "move_member")) {
 
@@ -91,6 +96,7 @@ public class OnMessageReceived extends ListenerAdapter {
         List<Member> members = get_active_members(event);
         Collections.shuffle(members);
         int amount_members = members.size();
+        model.delete_all_teams();
 
         if (amount_members < amount_teams) {
             event.getChannel().sendMessage("Only " + amount_members + " Teams are created, because there are less people than teams ordered")
@@ -160,6 +166,12 @@ public class OnMessageReceived extends ListenerAdapter {
         event.getGuild().moveVoiceMember(its_me, its_paragon).queue();
 
 
+    }
+
+    private void clear_teams(GuildMessageReceivedEvent event){
+        model.delete_all_teams();
+        event.getChannel().sendMessage("All Teams have been deleted.")
+                .queue();
     }
 
 
