@@ -6,6 +6,7 @@ IMPORTANT: It stores data ONLY during runtime. As the running process is stopped
  */
 
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.VoiceChannel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,18 @@ public class Model {
         }
         // null needs to be checked by the method who calls this method
         return null;
+    }
+
+    public List<Team> get_all_teams(){
+        return team_list;
+    }
+
+    public boolean isTeam_list_empty(){
+        return team_list.isEmpty();
+    }
+
+    public VoiceChannel get_team_channel(Team team){
+        return team.getTeam_channel();
     }
 
 }

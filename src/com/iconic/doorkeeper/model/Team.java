@@ -1,6 +1,8 @@
 package com.iconic.doorkeeper.model;
 
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.VoiceChannel;
+
 import java.util.List;
 
 /*
@@ -12,6 +14,7 @@ public class Team {
     private String team_name;
     private List<Member> members;
     private int index;
+    private VoiceChannel team_channel;
 
     public Team(String team_name, int index, List<Member> members){
         this.team_name = team_name;
@@ -51,5 +54,25 @@ public class Team {
 
     public void setIndex(int index){
         this.index = index;
+    }
+
+    public void addMember(Member member){
+        members.add(member);
+    }
+
+    public void removeMember(Member member){
+        members.remove(member);
+    }
+
+    public boolean isMember(Member member){
+        return members.contains(member);
+    }
+
+    public VoiceChannel getTeam_channel(){
+        return team_channel;
+    }
+
+    public void setTeam_channel(VoiceChannel team_channel){
+        this.team_channel = team_channel;
     }
 }

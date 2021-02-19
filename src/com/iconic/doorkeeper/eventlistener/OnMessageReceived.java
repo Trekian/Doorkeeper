@@ -3,16 +3,32 @@ package com.iconic.doorkeeper.eventlistener;
 import com.iconic.doorkeeper.Main;
 import com.iconic.doorkeeper.model.Model;
 
+import com.iconic.doorkeeper.model.Team;
+import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
 import java.util.*;
+
+/*
+Current Methods:
+        onGuildMessageReceived (initial Call)
+        show_active_members(GuildMessageReceivedEvent event)
+        create_random_teams(GuildMessageReceivedEvent event, int amount_teams)
+        move_members(GuildMessageReceivedEvent event, String member_name, String channel_name)
+        clear_teams(GuildMessageReceivedEvent event)
+        get_active_members(GuildMessageReceivedEvent event)
+        private String get_random_noun()
+        create_team_voice_channels(GuildMessageReceivedEvent event)
+
+ */
 
 public class OnMessageReceived extends ListenerAdapter {
 
@@ -91,12 +107,13 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
 
+    // TODO: Will be later feature to create own teams.
     private void create_teams(GuildMessageReceivedEvent event, String team, int amount_teams, List<Member> member) {
-
 
     }
 
     private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams) {
+        clear_teams(event);
         List<Member> members = get_active_members(event);
         Collections.shuffle(members);
         int amount_members = members.size();
@@ -169,6 +186,42 @@ public class OnMessageReceived extends ListenerAdapter {
 
         event.getGuild().moveVoiceMember(its_me, its_paragon).queue();
 
+
+    }
+
+    /*
+    First it will create a new Category of VoiceChannel and adds 1 Presenter Stage and for each team 1 channel
+     */
+    private void create_team_voice_channels(GuildMessageReceivedEvent event){
+        if(!model.isTeam_list_empty()){
+            String category_name = "Kneipen Quiz";
+            event.getGuild().createCategory(category_name).queue();
+            event.getGuild().createVoiceChannel("[0] Stage", event.getGuild().getCategoryById(category_name)).queue();
+
+            for (Team team : model.get_all_teams()){
+                event.getGuild().createVoiceChannel("["+team.getIndex()+"] "+team.getTeam_name(), event.getGuild().getCategoryById(category_name)).queue();
+            }
+
+        }else {
+            event.getChannel().sendMessage("No teams created yet.")
+                    .queue();
+        }
+
+    }
+
+    private void move_teams_to_teamchannel(GuildMessageReceivedEvent event){
+
+        if(!model.isTeam_list_empty())
+
+        for (Team team: model.get_all_teams()) {
+            for (Member member:team.getMembers()) {
+                event.getGuild().moveVoiceMember(member,team.getTeam_channel()).queue();
+            }
+        }
+    }
+
+    // TODO: Hier weiter machen
+    private void remove_old_channels(GuildMessageReceivedEvent event){
 
     }
 
