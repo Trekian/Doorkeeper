@@ -4,12 +4,10 @@ import com.iconic.doorkeeper.Main;
 import com.iconic.doorkeeper.model.Model;
 
 import com.iconic.doorkeeper.model.Team;
-import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 
 import java.io.BufferedReader;
 import java.io.File;
