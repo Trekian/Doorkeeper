@@ -4,6 +4,7 @@ import com.iconic.doorkeeper.Main;
 import com.iconic.doorkeeper.model.Model;
 
 import com.iconic.doorkeeper.model.Team;
+import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
@@ -14,17 +15,23 @@ import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /*
 Current Methods:
         onGuildMessageReceived (initial Call)
-        show_active_members(GuildMessageReceivedEvent event)
-        create_random_teams(GuildMessageReceivedEvent event, int amount_teams)
-        move_members(GuildMessageReceivedEvent event, String member_name, String channel_name)
-        clear_teams(GuildMessageReceivedEvent event)
-        get_active_members(GuildMessageReceivedEvent event)
-        private String get_random_noun()
-        create_team_voice_channels(GuildMessageReceivedEvent event)
+           |-> show_active_members              (GuildMessageReceivedEvent event)
+           |-> create_random_teams              (GuildMessageReceivedEvent event, int amount_teams)
+           |-> clear_teams                      (GuildMessageReceivedEvent event)
+           |-> get_active_members               (GuildMessageReceivedEvent event)
+           |-> get_random_noun()
+           |-> create_team_voice_channels       (GuildMessageReceivedEvent event)
+           |-> private void remove_category     (GuildMessageReceivedEvent event)
+           |-> set_moderators                   (GuildMessageReceivedEvent event, String[] names)
+           |-> getKneipenQuizID                 (GuildMessageReceivedEvent event)
+           |-> move_teams_to_teamchannel        (GuildMessageReceivedEvent event)
+           |-> remove_old_channels              (GuildMessageReceivedEvent event)
+           |-> remove_category                  (GuildMessageReceivedEvent event)
 
  */
 
@@ -64,17 +71,75 @@ public class OnMessageReceived extends ListenerAdapter {
 
 
         } else if (args[0].equalsIgnoreCase(Main.prefix + "clear_teams")) {
-            clear_teams(event);
+            clear_teams();
 
-        } else if (args[0].equalsIgnoreCase(Main.prefix + "move_member")) {
-            move_members(event, args[1], args[2]);
+        } else if (args[0].equalsIgnoreCase(Main.prefix + "moderator")){
+            if( args.length > 1){
+                set_moderators(event,args);
+            }else {
+                event.getChannel().sendMessage("Please state at least one username who is in a voicechannel")
+                        .queue();
+            }
 
-        } else if (args[0].equalsIgnoreCase(Main.prefix + "set_moderators")){
+        } else if( args[0].equalsIgnoreCase(Main.prefix + "initialise")){
+            // Creats a new Category with 1 "presenter" voicechannel and random teams and their team channels. Also creates a new C
+            System.out.println("Test");
+            create_random_teams(event,1);
+            try {
+                create_team_voice_channels(event);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-        } else if (args[0].equalsIgnoreCase(Main.prefix + "help")){
+
+        }else if( args[0].equalsIgnoreCase(Main.prefix + "reset")){
+            // Just for test various things
+            reset_all(event);
+
+
+        } else if(args[0].equalsIgnoreCase(Main.prefix + "spread")){
+            move_teams_to_teamchannel(event);
+        }else if (args[0].equalsIgnoreCase(Main.prefix + "help")){
             event.getChannel().sendMessage("Find more information here: https://github.com/Trekian/Doorkeeper")
                     .queue();
         }
+    }
+
+    private void reset_all(GuildMessageReceivedEvent event) {
+
+        // Order is important
+        clear_teams();
+        model.delete_all_Moderators();
+        remove_category(event);
+
+        event.getChannel().sendMessage("All Teams and Channels have been removed.")
+                .queue();
+    }
+
+    private void set_moderators(GuildMessageReceivedEvent event, String[] names){
+        model.delete_all_Moderators();
+        List<Member> memberList = get_active_members(event);
+
+        // i=i because 0 will be the !moderators
+        for (int i = 1; i< names.length; i++){
+            boolean found_member=false;
+            for (Member member : memberList) {
+                if(member.getUser().getName().equalsIgnoreCase(names[i])){
+                    model.addModerator(member);
+                    found_member=true;
+                    break;
+                }
+            }
+
+            if (!found_member){
+                event.getChannel().sendMessage("At least one name was not found. No moderators are set yet")
+                        .queue();
+                model.delete_all_Moderators();
+                return;
+            }
+        }
+        event.getChannel().sendMessage(model.getModeratorNames())
+                .queue();
     }
 
 
@@ -111,13 +176,17 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
     private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams) {
-        clear_teams(event);
+        clear_teams();
         List<Member> members = get_active_members(event);
         Collections.shuffle(members);
         int amount_members = members.size();
         model.delete_all_teams();
 
-        if (amount_members < amount_teams) {
+        if (amount_members == 0){
+            event.getChannel().sendMessage("No active members found. Join a voicechannel, to be active :)")
+                    .queue();
+            return;
+        }else if (amount_members < amount_teams) {
             event.getChannel().sendMessage("Only " + amount_members + " Teams are created, because there are less people than teams ordered")
                     .queue();
             amount_teams = amount_members;
@@ -143,7 +212,7 @@ public class OnMessageReceived extends ListenerAdapter {
                 new_created_team.add(members.get(index));
                 index++;
             }
-            model.create_team(get_random_noun(), i ,new_created_team);
+            model.create_team(get_random_noun()+"-"+get_random_noun(), i ,new_created_team);
 
         }
 
@@ -153,52 +222,28 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
-    //TODO: Not Finished yet
-    private void move_members(GuildMessageReceivedEvent event, String member_name, String channel_name) {
-
-        List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
-        System.out.println("Name des VoiceChannels 0: " + voice_list.get(0).getName());
-        System.out.println(get_active_members(event).toString());
-
-        Member its_me = null;
-        VoiceChannel its_paragon = null;
-
-        for (Member member : get_active_members(event)) {
-            System.out.println("Ergebniss vom Moven  " + member.getUser().getName());
-            if (member.getUser().getName().equalsIgnoreCase("Trekian")) {
-                System.out.println("I GOT YOU!");
-                its_me = member;
-                break;
-            }
-
-        }
-
-        for (VoiceChannel voice : voice_list) {
-            if (voice.getName().equalsIgnoreCase("Paragon")) {
-                System.out.println("I GOT Paragon!");
-                its_paragon = voice;
-                break;
-            }
-        }
-
-
-        event.getGuild().moveVoiceMember(its_me, its_paragon).queue();
-
-
-    }
-
     /*
     First it will create a new Category of VoiceChannel and adds 1 Presenter Stage and for each team 1 channel
      */
-    private void create_team_voice_channels(GuildMessageReceivedEvent event){
+    private void create_team_voice_channels(GuildMessageReceivedEvent event) throws InterruptedException {
         if(!model.isTeam_list_empty()){
             String category_name = "Kneipen Quiz";
             event.getGuild().createCategory(category_name).queue();
-            event.getGuild().createVoiceChannel("[0] Stage", event.getGuild().getCategoryById(category_name)).queue();
+            TimeUnit.SECONDS.sleep(2);
+            long category_id = getKneipenQuizID(event);
+            event.getGuild().getCategoryById(category_id).createVoiceChannel("[0] Stage").queue();
 
             for (Team team : model.get_all_teams()){
-                event.getGuild().createVoiceChannel("["+team.getIndex()+"] "+team.getTeam_name(), event.getGuild().getCategoryById(category_name)).queue();
+                String channel_name = "["+team.getIndex()+"] "+team.getTeam_name();
+                event.getGuild().getCategoryById(category_id).createVoiceChannel(channel_name).queue();
+                TimeUnit.SECONDS.sleep(2);
+                // Set the LAST Voicechannel in ChannelsList as TeamChannel
+                team.setTeam_channel(event.getGuild().getVoiceChannels().get(event.getGuild().getVoiceChannels().size()-1));
+                System.out.println(team.getTeam_channel().toString());
             }
+            TimeUnit.SECONDS.sleep(2);
+
+
 
         }else {
             event.getChannel().sendMessage("No teams created yet.")
@@ -206,6 +251,18 @@ public class OnMessageReceived extends ListenerAdapter {
         }
 
     }
+
+    private long getKneipenQuizID(GuildMessageReceivedEvent event){
+
+        List<Category> categories = event.getGuild().getCategories();
+        for (Category category: categories) {
+            if(category.getName().contains("Kneipen Quiz")){
+                return category.getIdLong();
+            }
+        }
+        return -1;
+    }
+
 
     private void move_teams_to_teamchannel(GuildMessageReceivedEvent event){
 
@@ -218,34 +275,52 @@ public class OnMessageReceived extends ListenerAdapter {
         }
     }
 
-    // TODO: Hier weiter machen
+
+    /*
+    This will remove all already created team voice-channels
+     */
     private void remove_old_channels(GuildMessageReceivedEvent event){
 
+        if (event.getGuild().getCategoryById(getKneipenQuizID(event)) != null){
+            List<VoiceChannel> channels = Objects.requireNonNull(event.getGuild().getCategoryById(getKneipenQuizID(event))).getVoiceChannels();
+
+            for (VoiceChannel voice: channels) {
+                voice.delete().queue();
+            }
+
+        }
     }
 
-    private void clear_teams(GuildMessageReceivedEvent event){
+    private void remove_category(GuildMessageReceivedEvent event){
+        remove_old_channels(event);
+        try {
+            event.getGuild().getCategoryById(getKneipenQuizID(event)).delete().queue();
+        }catch (Exception e){
+            System.out.println("Category is already deleted");
+        }
+
+
+    }
+
+    private void clear_teams(){
         model.delete_all_teams();
-        event.getChannel().sendMessage("All Teams have been deleted.")
-                .queue();
     }
 
-
-    // Get all users who are CURRENTLY in a VoiceChannel.
+    // Get all users who are CURRENTLY in a VoiceChannel excepte the moderators!
     private List<Member> get_active_members(GuildMessageReceivedEvent event) {
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
         List<Member> members_list = new ArrayList<>();
 
-        System.out.println("Amount Voicechannels: " + voice_list.size());
 
         for (VoiceChannel channel : voice_list) {
-            System.out.println("Name von Voicechannels: " + channel.getName());
             int channel_size = channel.getMembers().size();
 
             for (int i = 0; i < channel_size; i++) {
                 members_list.addAll(channel.getMembers());
             }
         }
+        members_list.removeAll(model.getModerators_list());
 
         return members_list;
 

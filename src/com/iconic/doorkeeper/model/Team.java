@@ -29,9 +29,9 @@ public class Team {
 
     public String get_team_members(){
         StringBuilder all_members_by_name = new StringBuilder();
-        all_members_by_name.append("[").append(index).append("]").append(team_name).append(": + ");
+        all_members_by_name.append("[").append(index).append("] **").append(team_name).append(":** | ");
         for (Member member: members) {
-            all_members_by_name.append(member.getUser().getName()).append(" +");
+            all_members_by_name.append(member.getUser().getName()).append(" |");
         }
         return all_members_by_name.toString();
     }
