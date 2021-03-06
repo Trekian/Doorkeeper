@@ -17,21 +17,25 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+
 /*
 Current Methods:
         onGuildMessageReceived (initial Call)
+           |-> reset_all()                      (GuildMessageReceivedEvent event)
            |-> show_active_members              (GuildMessageReceivedEvent event)
            |-> create_random_teams              (GuildMessageReceivedEvent event, int amount_teams)
            |-> clear_teams                      (GuildMessageReceivedEvent event)
            |-> get_active_members               (GuildMessageReceivedEvent event)
            |-> get_random_noun()
            |-> create_team_voice_channels       (GuildMessageReceivedEvent event)
-           |-> private void remove_category     (GuildMessageReceivedEvent event)
+           |-> remove_category                  (GuildMessageReceivedEvent event)
            |-> set_moderators                   (GuildMessageReceivedEvent event, String[] names)
            |-> getKneipenQuizID                 (GuildMessageReceivedEvent event)
            |-> move_teams_to_teamchannel        (GuildMessageReceivedEvent event)
+           |-> move_teams_to_stage              (GuildMessageReceivedEvent event)
            |-> remove_old_channels              (GuildMessageReceivedEvent event)
            |-> remove_category                  (GuildMessageReceivedEvent event)
+           |-> add_member_to_team               (GuildMessageReceivedEvent event, String name, String string_team_index)
 
  */
 
@@ -99,6 +103,16 @@ public class OnMessageReceived extends ListenerAdapter {
 
         } else if(args[0].equalsIgnoreCase(Main.prefix + "spread")){
             move_teams_to_teamchannel(event);
+        }else if(args[0].equalsIgnoreCase(Main.prefix + "drag")){
+            move_teams_to_stage(event);
+        }else if(args[0].equalsIgnoreCase(Main.prefix + "add_member")){
+            if(args.length > 2){
+                add_member_to_team(event, args[1], args[2]);
+            }else {
+                event.getChannel().sendMessage("Usage: '!add_member <Name> <Index of Team>'")
+                        .queue();
+            }
+
         }else if (args[0].equalsIgnoreCase(Main.prefix + "help")){
             event.getChannel().sendMessage("Find more information here: https://github.com/Trekian/Doorkeeper")
                     .queue();
@@ -138,12 +152,16 @@ public class OnMessageReceived extends ListenerAdapter {
                 return;
             }
         }
-        event.getChannel().sendMessage(model.getModeratorNames())
+        event.getChannel().sendMessage("Moderator(s): "+ model.getModeratorNames())
                 .queue();
     }
 
 
-    // Shows and count all User, who are in a VoiceChannel
+    /**
+     * Shows and count all User, who are in a VoiceChannel
+     *
+     * @param event The main object to interact with the Discord server methods.
+     */
     private void show_active_members(GuildMessageReceivedEvent event) {
         StringBuilder online_members = new StringBuilder();
 
@@ -173,6 +191,38 @@ public class OnMessageReceived extends ListenerAdapter {
     // TODO: Will be later feature to create own teams.
     private void create_teams(GuildMessageReceivedEvent event, String team, int amount_teams, List<Member> member) {
 
+    }
+
+    private void add_member_to_team(GuildMessageReceivedEvent event, String name, String string_team_index){
+        int team_index = Integer.parseInt(string_team_index);
+
+        Member member = get_member_by_name(event, name);
+        if(member == null){
+            event.getChannel().sendMessage("Name not found")
+                    .queue();
+            return;
+        }
+        for (Team team :model.get_all_teams()) {
+            if(team.getIndex() == team_index){
+                team.addMember(member);
+                return;
+            }
+        }
+        event.getChannel().sendMessage("Team Index not found")
+                .queue();
+
+
+
+    }
+
+    private Member get_member_by_name(GuildMessageReceivedEvent event, String name){
+
+        for (Member member: get_active_members(event)) {
+            if (member.getUser().getName().equalsIgnoreCase(name)){
+                return member;
+            }
+        }
+        return null;
     }
 
     private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams) {
@@ -222,8 +272,10 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
-    /*
-    First it will create a new Category of VoiceChannel and adds 1 Presenter Stage and for each team 1 channel
+    /**
+     * First it will create a new Category of VoiceChannel and adds for each team 1 channel and one additional Stage Voicechannel
+     *
+     * @param event The main object to interact with the Discord server methods.
      */
     private void create_team_voice_channels(GuildMessageReceivedEvent event) throws InterruptedException {
         if(!model.isTeam_list_empty()){
@@ -232,6 +284,9 @@ public class OnMessageReceived extends ListenerAdapter {
             TimeUnit.SECONDS.sleep(2);
             long category_id = getKneipenQuizID(event);
             event.getGuild().getCategoryById(category_id).createVoiceChannel("[0] Stage").queue();
+            TimeUnit.SECONDS.sleep(2);
+            model.setStage_channel(event.getGuild().getVoiceChannels().get(event.getGuild().getVoiceChannels().size()-1));
+
 
             for (Team team : model.get_all_teams()){
                 String channel_name = "["+team.getIndex()+"] "+team.getTeam_name();
@@ -252,6 +307,7 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
+    // Get the ID of the new Category, where all Voicechannels are in
     private long getKneipenQuizID(GuildMessageReceivedEvent event){
 
         List<Category> categories = event.getGuild().getCategories();
@@ -273,6 +329,23 @@ public class OnMessageReceived extends ListenerAdapter {
                 event.getGuild().moveVoiceMember(member,team.getTeam_channel()).queue();
             }
         }
+    }
+
+    /**
+     * Will move the teams back to "Stage [0]"
+     *
+     * @param event The main object to interact with the Discord server methods.
+     */
+    private void move_teams_to_stage(GuildMessageReceivedEvent event){
+
+        if(!model.isTeam_list_empty())
+
+            for (Team team: model.get_all_teams()) {
+                for (Member member:team.getMembers()) {
+                    event.getGuild().moveVoiceMember(member, model.getStage_channel()).queue();
+                }
+            }
+
     }
 
 
@@ -306,7 +379,13 @@ public class OnMessageReceived extends ListenerAdapter {
         model.delete_all_teams();
     }
 
-    // Get all users who are CURRENTLY in a VoiceChannel excepte the moderators!
+
+    /**
+     * Get all users who are CURRENTLY in a VoiceChannel EXCEPT the moderators!
+     *
+     * @param event The main object to interact with the Discord server methods.
+     * @return List<Member>
+     */
     private List<Member> get_active_members(GuildMessageReceivedEvent event) {
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
@@ -320,6 +399,7 @@ public class OnMessageReceived extends ListenerAdapter {
                 members_list.addAll(channel.getMembers());
             }
         }
+        // Removing the moderators from the list
         members_list.removeAll(model.getModerators_list());
 
         return members_list;

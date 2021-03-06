@@ -19,6 +19,7 @@ public class Model {
     private int amount_of_teams;
     private List<Team> team_list;
     private List<Member> moderators_list;
+    private VoiceChannel stage_channel;
 
     public Model(){
         team_list = new ArrayList<Team>();
@@ -83,6 +84,14 @@ public class Model {
 
     public List<Member> getModerators_list(){
         return moderators_list;
+    }
+
+    public void setStage_channel(VoiceChannel stage_channel) {
+        this.stage_channel = stage_channel;
+    }
+
+    public VoiceChannel getStage_channel(){
+        return stage_channel;
     }
 
     public String getModeratorNames(){
