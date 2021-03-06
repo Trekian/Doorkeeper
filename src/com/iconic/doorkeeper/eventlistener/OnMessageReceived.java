@@ -113,6 +113,13 @@ public class OnMessageReceived extends ListenerAdapter {
                         .queue();
             }
 
+        }else if(args[0].equalsIgnoreCase(Main.prefix + "ablauf")){
+            event.getChannel().sendMessage("1. Set moderators: !moderator <Names> \n" +
+                                                "2. Create random teams + channels : !initialise \n" +
+                                                "3. Move teams to Stage[0]: !drag \n" +
+                                                "4. Move teams to their channels: !spread \n" +
+                                                "5. Clear all teams/channels: !reset")
+                    .queue();
         }else if (args[0].equalsIgnoreCase(Main.prefix + "help")){
             event.getChannel().sendMessage("Find more information here: https://github.com/Trekian/Doorkeeper")
                     .queue();
