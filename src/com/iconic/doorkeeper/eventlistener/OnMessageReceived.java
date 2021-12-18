@@ -7,7 +7,7 @@ import com.iconic.doorkeeper.model.Team;
 import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.io.BufferedReader;
@@ -21,21 +21,21 @@ import java.util.concurrent.TimeUnit;
 /*
 Current Methods:
         onGuildMessageReceived (initial Call)
-           |-> reset_all()                      (GuildMessageReceivedEvent event)
-           |-> show_active_members              (GuildMessageReceivedEvent event)
-           |-> create_random_teams              (GuildMessageReceivedEvent event, int amount_teams)
-           |-> clear_teams                      (GuildMessageReceivedEvent event)
-           |-> get_active_members               (GuildMessageReceivedEvent event)
+           |-> reset_all()                      (MessageReceivedEvent event)
+           |-> show_active_members              (MessageReceivedEvent event)
+           |-> create_random_teams              (MessageReceivedEvent event, int amount_teams)
+           |-> clear_teams                      (MessageReceivedEvent event)
+           |-> get_active_members               (MessageReceivedEvent event)
            |-> get_random_noun()
-           |-> create_team_voice_channels       (GuildMessageReceivedEvent event)
-           |-> remove_category                  (GuildMessageReceivedEvent event)
-           |-> set_moderators                   (GuildMessageReceivedEvent event, String[] names)
-           |-> getKneipenQuizID                 (GuildMessageReceivedEvent event)
-           |-> move_teams_to_teamchannel        (GuildMessageReceivedEvent event)
-           |-> move_teams_to_stage              (GuildMessageReceivedEvent event)
-           |-> remove_old_channels              (GuildMessageReceivedEvent event)
-           |-> remove_category                  (GuildMessageReceivedEvent event)
-           |-> add_member_to_team               (GuildMessageReceivedEvent event, String name, String string_team_index)
+           |-> create_team_voice_channels       (MessageReceivedEvent event)
+           |-> remove_category                  (MessageReceivedEvent event)
+           |-> set_moderators                   (MessageReceivedEvent event, String[] names)
+           |-> getKneipenQuizID                 (MessageReceivedEvent event)
+           |-> move_teams_to_teamchannel        (MessageReceivedEvent event)
+           |-> move_teams_to_stage              (MessageReceivedEvent event)
+           |-> remove_old_channels              (MessageReceivedEvent event)
+           |-> remove_category                  (MessageReceivedEvent event)
+           |-> add_member_to_team               (MessageReceivedEvent event, String name, String string_team_index)
 
  */
 
@@ -48,7 +48,7 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
     // Distribute the command to the right Method
-    public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+    public void onGuildMessageReceived(MessageReceivedEvent event) {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
         if (args[0].equalsIgnoreCase(Main.prefix + "show_members")) {
@@ -127,7 +127,7 @@ public class OnMessageReceived extends ListenerAdapter {
         }
     }
 
-    private void reset_all(GuildMessageReceivedEvent event) {
+    private void reset_all(MessageReceivedEvent event) {
 
         // Order is important
         clear_teams();
@@ -138,7 +138,7 @@ public class OnMessageReceived extends ListenerAdapter {
                 .queue();
     }
 
-    private void set_moderators(GuildMessageReceivedEvent event, String[] names){
+    private void set_moderators(MessageReceivedEvent event, String[] names){
         model.delete_all_Moderators();
         List<Member> memberList = get_active_members(event);
 
@@ -170,7 +170,7 @@ public class OnMessageReceived extends ListenerAdapter {
      *
      * @param event The main object to interact with the Discord server methods.
      */
-    private void show_active_members(GuildMessageReceivedEvent event) {
+    private void show_active_members(MessageReceivedEvent event) {
         StringBuilder online_members = new StringBuilder();
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
@@ -197,11 +197,11 @@ public class OnMessageReceived extends ListenerAdapter {
 
 
     // TODO: Will be later feature to create own teams.
-    private void create_teams(GuildMessageReceivedEvent event, String team, int amount_teams, List<Member> member) {
+    private void create_teams(MessageReceivedEvent event, String team, int amount_teams, List<Member> member) {
 
     }
 
-    private void add_member_to_team(GuildMessageReceivedEvent event, String name, String string_team_index){
+    private void add_member_to_team(MessageReceivedEvent event, String name, String string_team_index){
         int team_index = Integer.parseInt(string_team_index);
 
         Member member = get_member_by_name(event, name);
@@ -223,7 +223,7 @@ public class OnMessageReceived extends ListenerAdapter {
 
     }
 
-    private Member get_member_by_name(GuildMessageReceivedEvent event, String name){
+    private Member get_member_by_name(MessageReceivedEvent event, String name){
 
         for (Member member: get_active_members(event)) {
             if (member.getUser().getName().equalsIgnoreCase(name)){
@@ -233,7 +233,7 @@ public class OnMessageReceived extends ListenerAdapter {
         return null;
     }
 
-    private void create_random_teams(GuildMessageReceivedEvent event, int amount_teams) {
+    private void create_random_teams(MessageReceivedEvent event, int amount_teams) {
         clear_teams();
         List<Member> members = get_active_members(event);
         Collections.shuffle(members);
@@ -285,7 +285,7 @@ public class OnMessageReceived extends ListenerAdapter {
      *
      * @param event The main object to interact with the Discord server methods.
      */
-    private void create_team_voice_channels(GuildMessageReceivedEvent event) throws InterruptedException {
+    private void create_team_voice_channels(MessageReceivedEvent event) throws InterruptedException {
         if(!model.isTeam_list_empty()){
             String category_name = "Kneipen Quiz";
             event.getGuild().createCategory(category_name).queue();
@@ -316,7 +316,7 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
     // Get the ID of the new Category, where all Voicechannels are in
-    private long getKneipenQuizID(GuildMessageReceivedEvent event){
+    private long getKneipenQuizID(MessageReceivedEvent event){
 
         List<Category> categories = event.getGuild().getCategories();
         for (Category category: categories) {
@@ -328,7 +328,7 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
 
-    private void move_teams_to_teamchannel(GuildMessageReceivedEvent event){
+    private void move_teams_to_teamchannel(MessageReceivedEvent event){
 
         if(!model.isTeam_list_empty())
 
@@ -344,7 +344,7 @@ public class OnMessageReceived extends ListenerAdapter {
      *
      * @param event The main object to interact with the Discord server methods.
      */
-    private void move_teams_to_stage(GuildMessageReceivedEvent event){
+    private void move_teams_to_stage(MessageReceivedEvent event){
 
         if(!model.isTeam_list_empty())
 
@@ -360,7 +360,7 @@ public class OnMessageReceived extends ListenerAdapter {
     /*
     This will remove all already created team voice-channels
      */
-    private void remove_old_channels(GuildMessageReceivedEvent event){
+    private void remove_old_channels(MessageReceivedEvent event){
 
         if (event.getGuild().getCategoryById(getKneipenQuizID(event)) != null){
             List<VoiceChannel> channels = Objects.requireNonNull(event.getGuild().getCategoryById(getKneipenQuizID(event))).getVoiceChannels();
@@ -372,7 +372,7 @@ public class OnMessageReceived extends ListenerAdapter {
         }
     }
 
-    private void remove_category(GuildMessageReceivedEvent event){
+    private void remove_category(MessageReceivedEvent event){
         remove_old_channels(event);
         try {
             event.getGuild().getCategoryById(getKneipenQuizID(event)).delete().queue();
@@ -394,7 +394,7 @@ public class OnMessageReceived extends ListenerAdapter {
      * @param event The main object to interact with the Discord server methods.
      * @return List<Member>
      */
-    private List<Member> get_active_members(GuildMessageReceivedEvent event) {
+    private List<Member> get_active_members(MessageReceivedEvent event) {
 
         List<VoiceChannel> voice_list = event.getGuild().getVoiceChannels();
         List<Member> members_list = new ArrayList<>();

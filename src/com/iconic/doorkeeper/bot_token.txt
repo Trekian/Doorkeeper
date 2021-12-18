@@ -1,2 +1,2 @@
 //Insert your Token just in a new line. Add this to your .gitignore, so nobody has access to your token.
-token=
+token=OTIxNzUyODYyMjMxNDk0Njg3.Yb3fPw.ACHQBnrPLaOS9wJ_hPQ0n7dDMoY
