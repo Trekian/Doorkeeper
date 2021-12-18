@@ -48,7 +48,7 @@ public class OnMessageReceived extends ListenerAdapter {
     }
 
     // Distribute the command to the right Method
-    public void onGuildMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(MessageReceivedEvent event) {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
         if (args[0].equalsIgnoreCase(Main.prefix + "show_members")) {
