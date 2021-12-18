@@ -6,7 +6,7 @@ If you want to organize an online quiz with multiple teams, you can use DoorKeep
 
 Below you will find all commands and how to use them.
 
-###How to start
+##How to start
 **Requirements**: All people who are in a voicechannel are participants for the quiz, so it better to create a new Discord server, so only quiz paricipants will join.
 1) Get all people who wants to participate in a **Voicechannel**, so the will recognize as 'active'.
 2) Set at least one moderator(s) with _!moderator discord_name1 discord_name2 ..._  
