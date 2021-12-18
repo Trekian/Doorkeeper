@@ -86,14 +86,18 @@ public class OnMessageReceived extends ListenerAdapter {
             }
 
         } else if( args[0].equalsIgnoreCase(Main.prefix + "initialise")){
-            // Creats a new Category with 1 "presenter" voicechannel and random teams and their team channels. Also creates a new C
+
             System.out.println("Test");
-            create_random_teams(event,1);
-            try {
-                create_team_voice_channels(event);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (model.get_all_teams().size() != 0){
+                // Creats a new Category with 1 "presenter" voicechannel and random teams and their team channels. Also creates a new C
+                //create_random_teams(event,1);
+                try {
+                    create_team_voice_channels(event);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+
 
 
         }else if( args[0].equalsIgnoreCase(Main.prefix + "reset")){
@@ -262,6 +266,7 @@ public class OnMessageReceived extends ListenerAdapter {
             List<Member> new_created_team = new ArrayList<>();
             int remaining = 0;
 
+            // Adding one remaining member to this team
             if(remaining_members > 0){
                 remaining =1;
                 remaining_members--;
@@ -407,6 +412,7 @@ public class OnMessageReceived extends ListenerAdapter {
                 members_list.addAll(channel.getMembers());
             }
         }
+        members_list = new ArrayList<Member>(new HashSet<Member>(members_list));
         // Removing the moderators from the list
         members_list.removeAll(model.getModerators_list());
 
