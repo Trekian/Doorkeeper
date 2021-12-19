@@ -18,4 +18,5 @@ sourceSets {
 dependencies {
     implementation("net.dv8tion:JDA:5.0.0-alpha.2")
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.0-alpha5'
+    testImplementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.0-alpha5'
 }
