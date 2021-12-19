@@ -96,6 +96,9 @@ public class OnMessageReceived extends ListenerAdapter {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }else {
+                event.getChannel().sendMessage("No teams are set up yet.")
+                        .queue();
             }
 
 
@@ -298,19 +301,17 @@ public class OnMessageReceived extends ListenerAdapter {
             long category_id = getKneipenQuizID(event);
             event.getGuild().getCategoryById(category_id).createVoiceChannel("[0] Stage").queue();
             TimeUnit.SECONDS.sleep(2);
-            model.setStage_channel(event.getGuild().getVoiceChannels().get(event.getGuild().getVoiceChannels().size()-1));
-
+            model.setStage_channel(event.getGuild().getVoiceChannelById(getIDofVoiceChannel(event, "[0] Stage")));
 
             for (Team team : model.get_all_teams()){
                 String channel_name = "["+team.getIndex()+"] "+team.getTeam_name();
                 event.getGuild().getCategoryById(category_id).createVoiceChannel(channel_name).queue();
                 TimeUnit.SECONDS.sleep(2);
-                // Set the LAST Voicechannel in ChannelsList as TeamChannel
-                team.setTeam_channel(event.getGuild().getVoiceChannels().get(event.getGuild().getVoiceChannels().size()-1));
+
+                team.setTeam_channel(event.getGuild().getVoiceChannelById(getIDofVoiceChannel(event, channel_name)));
                 System.out.println(team.getTeam_channel().toString());
             }
             TimeUnit.SECONDS.sleep(2);
-
 
 
         }else {
@@ -330,6 +331,10 @@ public class OnMessageReceived extends ListenerAdapter {
             }
         }
         return -1;
+    }
+
+    private long getIDofVoiceChannel(MessageReceivedEvent event, String ChannelName){
+         return event.getGuild().getVoiceChannelsByName(ChannelName,true).get(0).getIdLong();
     }
 
 
